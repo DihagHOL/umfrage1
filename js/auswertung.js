@@ -149,25 +149,60 @@
         + "Wenn dort „(leer)“ steht, füllt der Flow die Spalte UmfrageId nicht – "
         + "in der Aktion „Element erstellen“ nachtragen.");
     }
+    // Standort und Bereich notfalls aus dem Antwortsatz nachziehen.
+    // Die beiden Spalten füllt der Flow – bleibt eine davon leer (Feld im Flow
+    // nicht gesetzt, Umfrage von früher, Spalte nachträglich angelegt), stünde
+    // sonst ein leerer Filter da, obwohl die Antwort selbst die Angabe enthält.
+    // Welche Frage welche Spalte speist, sagt „auswertung" im Fragebogen.
+    let nachgezogen = 0;
+    for (const r of ergebnis.zeilen) {
+      if (r.standort && r.bereich) continue;
+      const k = FRAGEBOGEN.kennzahlen(def(), r.antworten || {});
+      if (!r.standort && k.standort) { r.standort = k.standort; nachgezogen++; }
+      if (!r.bereich && k.bereich)   { r.bereich = k.bereich; nachgezogen++; }
+    }
+    if (nachgezogen) {
+      console.info(`[Auswertung] ${nachgezogen} Angabe(n) zu Standort/Bereich aus dem `
+        + "Antwortsatz ergänzt – die Spalten in SharePoint waren leer.");
+    }
+
     S.alleAntworten = ergebnis.zeilen;
     filterFuellen();
     filtern();
   }
 
+  const OHNE = "__ohne__";        // Sonderwert für „(ohne Angabe)"
+  const sauber = w => String(w || "").trim();
+
   function filterFuellen() {
-    const werte = (feld) => [...new Set(S.alleAntworten.map(r => r[feld]).filter(Boolean))].sort();
+    const werte = feld => [...new Set(S.alleAntworten.map(r => sauber(r[feld])).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "de"));
+
     for (const [id, feld] of [["fStandort", "standort"], ["fBereich", "bereich"]]) {
       const sel = $(id), alt = sel.value;
+      const ohne = S.alleAntworten.filter(r => !sauber(r[feld])).length;
+
+      // Der Wert MUSS im value-Attribut stehen. Ohne das nimmt der Browser den
+      // Text des Eintrags – und normalisiert dabei Leerraum. Bei kurzen Werten
+      // wie „Coswig Guss" fällt das nie auf, bei „In der Produktion / Werkstatt /
+      // Gießerei" schon: Der Vergleich in filtern() traf dann nichts mehr.
       sel.innerHTML = `<option value="">alle</option>`
-        + werte(feld).map(w => `<option${w === alt ? " selected" : ""}>${esc(w)}</option>`).join("");
+        + werte(feld).map(w =>
+            `<option value="${esc(w)}"${w === alt ? " selected" : ""}>${esc(w)}</option>`).join("")
+        + (ohne ? `<option value="${OHNE}"${alt === OHNE ? " selected" : ""}>`
+                  + `(ohne Angabe) · ${ohne}</option>` : "");
     }
   }
+
+  /** Trifft die Auswahl auf diesen Wert zu? Leere Auswahl = alles. */
+  const passt = (wert, wahl) =>
+    !wahl || (wahl === OHNE ? !sauber(wert) : sauber(wert) === wahl);
 
   function filtern() {
     const st = $("fStandort").value, be = $("fBereich").value, von = $("fVon").value;
     S.antworten = S.alleAntworten.filter(r =>
-      (!st || r.standort === st) &&
-      (!be || r.bereich === be) &&
+      passt(r.standort, st) &&
+      passt(r.bereich, be) &&
       (!von || String(r.eingereicht).slice(0, 10) >= von));
     zeichne();
   }
