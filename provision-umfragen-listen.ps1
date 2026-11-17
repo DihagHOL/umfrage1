@@ -12,7 +12,7 @@
 #       -SiteUrl  "https://dihag.sharepoint.com/sites/IT" `
 #       -ClientId "<entra-app-guid>" `
 #       -FlowKonto "administrator@dihag.com" `
-#       -Auswerter "kommunikation@dihag.com","fedorov@dihag.com"
+#       -Auswerter "kommunikation@dihag.com","vorname.nachname@dihag.com"
 #
 # Die Rechte in der Anwendung selbst (wer die Auswertung öffnen darf) stehen
 # davon getrennt in der Liste AppPermissions, App = "umfrage1".

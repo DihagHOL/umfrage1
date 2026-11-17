@@ -118,7 +118,7 @@ Konto öffnen können, legen Sie in `AppPermissions` einmal von Hand an:
 
 | Title | UserEmail | App | Role |
 |---|---|---|---|
-| fedorov@dihag.com | fedorov@dihag.com | umfrage1 | admin |
+| vorname.nachname@dihag.com | vorname.nachname@dihag.com | umfrage1 | admin |
 
 Danach läuft alles Weitere über *Verwaltung → Auswerter*.
 
